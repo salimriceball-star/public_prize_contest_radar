@@ -28,6 +28,10 @@
 - due-soon: 마감 7일/3일/1일 전 경보
 - manual-review: 약관/저작권/지역제한 확인 필요 항목 표시
 
+Telegram 운영 기준
+- 현재 master id: `779460653`
+- 식별 기준: private chat `@Rktan6` / display name `낙관적인 비관론자`
+- notifier 는 `TELEGRAM_BOT_TOKEN` 과 `TELEGRAM_MASTER_ID=779460653` 조합을 기본 운영값으로 사용한다.
+
 미해결 사항
-- Telegram master id 는 Bot API getUpdates 결과가 비어 있어 자동 확정되지 않음
 - 일부 공공 사이트는 anti-bot 또는 접속 제한이 있어 source 설정 튜닝이 필요함

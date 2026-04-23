@@ -20,11 +20,11 @@
 - [x] CLI 진입점 구현
 - [x] 템플릿 CSV/운영 스크립트 작성
 - [x] 테스트 및 실데이터 1회 검증
-- [ ] GitHub 원격 저장소 생성, commit, push
+- [x] GitHub 원격 저장소 생성, commit, push
 
 ## Validation Snapshot
 
 - [x] `PYTHONPATH=src python3 -m compileall src tests`
 - [x] `PYTHONPATH=src python3 -m unittest discover -s tests -v` -> 7 tests OK
 - [x] `PYTHONPATH=src python3 -m contest_radar.cli run-once --top 8 --save-output latest-digest.txt`
-- [x] `PYTHONPATH=src python3 -m contest_radar.cli resolve-master-id --bot-token ...` -> no updates found
+- [x] `PYTHONPATH=src python3 -m contest_radar.cli resolve-master-id --bot-token ...` -> master id `779460653` 확인

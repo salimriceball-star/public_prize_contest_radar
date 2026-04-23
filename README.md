@@ -31,15 +31,16 @@ AI 기반 공공형 상금 공모전 모니터링 시스템.
 2. DB 초기화
    python3 -m contest_radar.cli init-db
 
-3. master id 탐색
-   export TELEGRAM_BOT_TOKEN='...'
+3. master id 탐색/확인
+   export TELEGRAM_BOT_TOKEN='***'
    python3 -m contest_radar.cli resolve-master-id
+   현재 확인된 master id: 779460653
 
 4. 1회 수집 + 점수화 + digest 출력
    python3 -m contest_radar.cli run-once --top 10
 
 5. Telegram 전송
-   export TELEGRAM_MASTER_ID='123456789'
+   export TELEGRAM_MASTER_ID='779460653'
    python3 -m contest_radar.cli run-once --top 10 --notify
 
 주요 문서
@@ -51,5 +52,6 @@ AI 기반 공공형 상금 공모전 모니터링 시스템.
 - data/past_results.sample.csv
 
 주의
-- Bot API는 개인 DM 전송에 chat id가 필요하다. 현재 세션에서는 getUpdates 결과가 비어 있어 master id를 자동 확정하지 못했다. bot에 /start 또는 아무 메시지를 보낸 뒤 resolve-master-id 명령을 다시 실행하면 수집 가능하다.
+- Bot API는 개인 DM 전송에 chat id가 필요하다. 현재 이 프로젝트의 확인된 Telegram master id 는 `779460653` 이다.
+- `resolve-master-id` 명령은 향후 bot 업데이트가 바뀌었는지 점검할 때 계속 사용할 수 있다.
 - 프로젝트 규칙은 agents.md를 따른다.
