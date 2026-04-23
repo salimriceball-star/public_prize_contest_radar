@@ -9,7 +9,7 @@ from .config_loader import DEFAULT_CATEGORIES_PATH, DEFAULT_DB_PATH, DEFAULT_SOU
 from .models import ContestRecord, RawListing, SourceSpec
 from .normalize import canonicalize_url, fingerprint_for, repeat_key_from_title
 from .scoring import score_listing
-from .storage import connect, init_db, lookup_existing_fingerprints, lookup_repeat_counts, record_run, upsert_records
+from .storage import connect, fetch_known_urls, init_db, lookup_existing_fingerprints, lookup_repeat_counts, record_run, upsert_records
 
 
 def _dedupe_listings(listings: Iterable[RawListing]) -> list[RawListing]:
@@ -39,13 +39,22 @@ def run_once(
     collected: list[RawListing] = []
     errors: list[dict[str, Any]] = []
     with connect(db_path) as conn:
+        known_urls = fetch_known_urls(conn)
         for index, source in enumerate(sources, start=1):
             if enabled_source_ids and source.id not in enabled_source_ids:
                 continue
             if not source.enabled:
                 continue
             run_id = f"{run_id_prefix}-{index}"
-            items, error_text = safe_collect_source(source, defaults)
+            raw_items, error_text = safe_collect_source(source, defaults, known_urls=known_urls)
+            items = []
+            for item in raw_items:
+                cache_key = canonicalize_url(item.url)
+                if cache_key in known_urls:
+                    item.extras["cache_hit"] = True
+                    continue
+                known_urls.add(cache_key)
+                items.append(item)
             status = "ok" if not error_text else "error"
             record_run(conn, run_id, started_at, source.id, status, len(items), error_text)
             collected.extend(items)

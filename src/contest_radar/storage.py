@@ -7,7 +7,7 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from .models import ContestRecord
-from .normalize import repeat_key_from_title
+from .normalize import canonicalize_url, repeat_key_from_title
 
 
 SCHEMA = """
@@ -117,6 +117,11 @@ def lookup_existing_fingerprints(conn: sqlite3.Connection, fingerprints: Iterabl
         keys,
     ).fetchall()
     return {str(row["fingerprint"]) for row in rows}
+
+
+def fetch_known_urls(conn: sqlite3.Connection) -> set[str]:
+    rows = conn.execute("SELECT url FROM contests").fetchall()
+    return {canonicalize_url(str(row["url"])) for row in rows if row["url"]}
 
 
 def row_to_record(row: sqlite3.Row) -> ContestRecord:

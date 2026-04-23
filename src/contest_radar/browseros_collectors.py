@@ -314,15 +314,21 @@ def extract_detail_metadata(listing: RawListing, detail_payload: dict) -> dict[s
     }
 
 
-def enrich_listings_with_browseros_details(source: SourceSpec, listings: list[RawListing]) -> list[RawListing]:
+def enrich_listings_with_browseros_details(source: SourceSpec, listings: list[RawListing], known_urls: set[str] | None = None) -> list[RawListing]:
     if not listings or source.detail_fetch != "browseros_detail":
         return listings
+    known = {canonicalize_url(url) for url in (known_urls or set())}
     detail_expression = build_detail_expression(source)
     detail_budget = min(source.detail_limit, _runtime_iteration_budget())
-    for index, listing in enumerate(listings):
-        if index >= detail_budget:
+    details_fetched = 0
+    for listing in listings:
+        if canonicalize_url(listing.url) in known:
+            listing.extras["cache_hit"] = True
+            continue
+        if details_fetched >= detail_budget:
             break
         detail_payload = evaluate_url(listing.url, detail_expression, wait_seconds=source.detail_wait_seconds)
+        details_fetched += 1
         if not isinstance(detail_payload, dict):
             continue
         detail = extract_detail_metadata(listing, detail_payload)
@@ -336,10 +342,13 @@ def enrich_listings_with_browseros_details(source: SourceSpec, listings: list[Ra
     return listings
 
 
-def collect_browseros_anchor_scan(source: SourceSpec, defaults: dict[str, object]) -> list[RawListing]:
+def collect_browseros_anchor_scan(source: SourceSpec, defaults: dict[str, object], known_urls: set[str] | None = None) -> list[RawListing]:
     wait_seconds = float(source.load_wait_seconds or defaults.get("request_timeout_seconds", 20))
     payload = evaluate_url(source.url, build_listing_expression(), wait_seconds=wait_seconds)
     if not isinstance(payload, dict):
         return []
     listings = parse_browseros_listing_payload(source, payload)
-    return enrich_listings_with_browseros_details(source, listings)
+    if known_urls:
+        known = {canonicalize_url(url) for url in known_urls}
+        listings = [listing for listing in listings if canonicalize_url(listing.url) not in known]
+    return enrich_listings_with_browseros_details(source, listings, known_urls=known_urls)

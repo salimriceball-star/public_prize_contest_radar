@@ -58,11 +58,12 @@ def _extract_snippet(anchor: Tag) -> str:
     return snippet[:280]
 
 
-def collect_anchor_scan(source: SourceSpec, defaults: dict[str, object]) -> list[RawListing]:
+def collect_anchor_scan(source: SourceSpec, defaults: dict[str, object], known_urls: set[str] | None = None) -> list[RawListing]:
     timeout_seconds = int(defaults.get("request_timeout_seconds", 20))
     user_agent = str(defaults.get("user_agent", "Mozilla/5.0"))
     min_len = int(defaults.get("min_anchor_text_length", 6))
     max_len = int(defaults.get("max_anchor_text_length", 140))
+    known = {canonicalize_url(url) for url in (known_urls or set())}
     html = fetch_html(source.url, timeout_seconds=timeout_seconds, user_agent=user_agent)
     soup = BeautifulSoup(html, "html.parser")
     results: list[RawListing] = []
@@ -77,6 +78,8 @@ def collect_anchor_scan(source: SourceSpec, defaults: dict[str, object]) -> list
             continue
         target_url = _build_link(source, anchor)
         if not target_url or not _path_allowed(source, target_url):
+            continue
+        if known and canonicalize_url(target_url) in known:
             continue
         key = (title, target_url)
         if key in seen:
@@ -99,18 +102,18 @@ def collect_anchor_scan(source: SourceSpec, defaults: dict[str, object]) -> list
     return results
 
 
-def collect_source(source: SourceSpec, defaults: dict[str, object]) -> list[RawListing]:
+def collect_source(source: SourceSpec, defaults: dict[str, object], known_urls: set[str] | None = None) -> list[RawListing]:
     if not source.enabled:
         return []
     if source.kind == "anchor_scan":
-        return collect_anchor_scan(source, defaults)
+        return collect_anchor_scan(source, defaults, known_urls=known_urls)
     if source.kind == "browseros_anchor_scan":
-        return collect_browseros_anchor_scan(source, defaults)
+        return collect_browseros_anchor_scan(source, defaults, known_urls=known_urls)
     raise ValueError(f"Unsupported source kind: {source.kind}")
 
 
-def safe_collect_source(source: SourceSpec, defaults: dict[str, object]) -> tuple[list[RawListing], str | None]:
+def safe_collect_source(source: SourceSpec, defaults: dict[str, object], known_urls: set[str] | None = None) -> tuple[list[RawListing], str | None]:
     try:
-        return collect_source(source, defaults), None
+        return collect_source(source, defaults, known_urls=known_urls), None
     except Exception as exc:
         return [], f"{type(exc).__name__}: {exc}"

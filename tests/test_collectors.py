@@ -51,6 +51,28 @@ class CollectorsTest(unittest.TestCase):
         items = collect_anchor_scan(source, {"request_timeout_seconds": 5, "user_agent": "test", "min_anchor_text_length": 3})
         self.assertEqual([item.title for item in items], ["좋은 공모전"])
 
+    @patch("contest_radar.collectors.fetch_html")
+    def test_anchor_scan_skips_known_urls_after_canonicalization(self, mock_fetch_html):
+        mock_fetch_html.return_value = """
+        <html><body>
+          <a href='/contest/'>공공데이터 AI 공모전</a>
+        </body></html>
+        """
+        source = SourceSpec(
+            id="example",
+            name="Example",
+            kind="anchor_scan",
+            url="https://example.com/list",
+            enabled=True,
+            text_allow_patterns=["공모전"],
+        )
+        items = collect_anchor_scan(
+            source,
+            {"request_timeout_seconds": 5, "user_agent": "test", "min_anchor_text_length": 3},
+            known_urls={"https://example.com/contest/"},
+        )
+        self.assertEqual(items, [])
+
     @patch("contest_radar.collectors.collect_source")
     def test_safe_collect_source_converts_unexpected_exception_to_error_text(self, mock_collect_source):
         class CustomError(Exception):

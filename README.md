@@ -56,6 +56,7 @@ AI 기반 공공형 상금 공모전 모니터링 시스템.
   - 22:00 KST / 13:00 UTC: 신규 공공형 공모전만 추려 digest 알림
 - `scripts/run_radar.sh`: 공통 CLI 실행 진입점이며 `.local/runtime.env`가 있으면 로드한다.
 - `scripts/daily_contest_update.sh`: cron에서 매일 실행하는 신규 공모전 업데이트 스크립트다. 기본값은 `run-once --new-only --top 10 --public-only --min-score 40 --notify`다.
+- 이미 확인한 공모전 URL은 SQLite `contests.url` 캐시로 기억한다. 다음 실행 때는 목록에서 같은 URL을 발견해도 상세 페이지 재방문/재점수화/재알림을 건너뛴다.
 - BrowserOS/CDP는 `127.0.0.1:9100`을 기본 사용한다. `127.0.0.1:9200/health`가 내려가도 CDP `/json/version`이 살아 있으면 수집을 계속한다.
 - Telegram bot token, GitHub PAT 등 민감값은 `.local/` 또는 환경변수에만 두고 문서/커밋에 기록하지 않는다.
 

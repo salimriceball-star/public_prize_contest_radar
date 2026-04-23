@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
-from contest_radar.browseros_collectors import build_listing_expression, extract_detail_metadata, parse_browseros_listing_payload
+from contest_radar.browseros_collectors import build_listing_expression, enrich_listings_with_browseros_details, extract_detail_metadata, parse_browseros_listing_payload
 from contest_radar.config_loader import load_sources
 from contest_radar.models import RawListing, SourceSpec
 
@@ -158,6 +159,30 @@ class BrowserOSParsingTest(unittest.TestCase):
         enriched = extract_detail_metadata(listing, detail_payload)
         self.assertIn("주최 서울교통공사", enriched["detail_content"])
         self.assertNotIn("주간 조회수 베스트", enriched["snippet"])
+
+    def test_enrich_listings_skips_cached_urls_without_detail_fetch(self):
+        source = SourceSpec(
+            id="thinkcontest-home",
+            name="Thinkgood Home",
+            kind="browseros_anchor_scan",
+            url="https://www.thinkcontest.com/",
+            detail_fetch="browseros_detail",
+            detail_limit=3,
+        )
+        listings = [
+            RawListing(
+                source_id=source.id,
+                source_name=source.name,
+                source_url=source.url,
+                title="이미 본 공모전",
+                url="https://example.com/already-seen",
+            )
+        ]
+        with patch("contest_radar.browseros_collectors.evaluate_url") as evaluate_url:
+            enriched = enrich_listings_with_browseros_details(source, listings, known_urls={"https://example.com/already-seen"})
+        evaluate_url.assert_not_called()
+        self.assertIsNone(enriched[0].detail_title)
+        self.assertTrue(enriched[0].extras["cache_hit"])
 
 
 if __name__ == "__main__":
