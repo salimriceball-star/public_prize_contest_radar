@@ -1,0 +1,28 @@
+# Serena memory — browseros ops done — 2026-04-23 15:49 UTC
+
+- repo: /home/vboxuser/public_prize_contest_radar
+- branch/origin: main -> origin/main
+- commit/push: 9d4921c Attach screenshots to Telegram contest alerts (pushed)
+- goal_done: Telegram 알림에 게시물 스크린샷 첨부 + K-Startup bizpbanc 목록 URL 누출 방지 + BrowserOS/CDP 수동 검증
+- key_changes:
+  - src/contest_radar/browseros_collectors.py: kstartup-biz 전용 pbancSn/go_view 추출, schM=view&pbancSn 상세 URL만 허용, 목록 URL fallback 차단
+  - src/contest_radar/browseros_cdp.py: evaluate_url 유지/보강, capture_url_screenshot 추가, PNG 저장 후 tab/session 정리
+  - src/contest_radar/telegram.py: send_message 유지, multipart sendPhoto 업로드 + send_message_with_photos 추가
+  - src/contest_radar/cli.py: --screenshot-top, screenshot capture/send wiring, send-test plain text 유지, due-soon/digest screenshot 대상 정렬 일치
+  - tests/: K-Startup parsing/CDP screenshot/Telegram photo/CLI notification regressions 추가
+  - .gitignore: logs/screenshots/, tmp/ ignore
+- verification:
+  - PYTHONPATH=src python3 -m unittest discover -s tests -p 'test_*.py' -v => 43 tests OK
+  - PYTHONPATH=src python3 -m compileall -q src tests => OK
+  - git diff --check => OK
+  - added-line secret/security grep => no findings
+  - independent delegate code review => approve/no blocking findings
+- BrowserOS manual verify:
+  - command used local deps PYTHONPATH=.local/site-packages:src
+  - source: https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do
+  - result: kstartup_listings=8, detail_urls=8, bad_listing_urls=0
+  - sample detail: ...bizpbanc-ongoing.do?schM=view&pbancSn=176892
+  - screenshot: /home/vboxuser/public_prize_contest_radar/logs/screenshots/kstartup-manual-verify-20260423.png (ignored; 538034 bytes)
+  - vision check: screenshot is individual K-Startup 사업공고 상세 페이지, not list page
+- credentials: no tokens/secret values recorded; GitHub push used repo-local PAT via temporary askpass, script removed
+- current status at memory time: git clean on main...origin/main before this memory file write
