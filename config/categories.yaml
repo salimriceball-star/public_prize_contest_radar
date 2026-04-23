@@ -1,0 +1,123 @@
+weights:
+  prize: 25
+  user_fit: 25
+  ai_fit: 20
+  repeatable: 15
+  public_sector: 10
+  low_burden_bonus: 5
+penalties:
+  copyright_toxic: -10
+  public_vote: -10
+  offline_burden: -10
+  low_prize_heavy_work: -15
+  hard_restriction: -10
+lanes:
+  policy_idea:
+    display_name: 정책/아이디어 제안형
+    keywords: [정책, 제안, 혁신, 개선, 규제혁신, 국민제안, 아이디어, 개선과제, 제안서]
+    user_fit: high
+    ai_fit: high
+  citizen_panel:
+    display_name: 시민참여/평가단/모니터링형
+    keywords: [시민참여단, 혁신단, 평가단, 국민평가단, 모니터링단, 참여단, 심사단]
+    user_fit: high
+    ai_fit: medium
+  public_shortform:
+    display_name: 공공홍보 숏폼/영상/UCC형
+    keywords: [숏폼, 영상, UCC, 콘텐츠, 홍보영상, 캠페인, 공익광고, 공공홍보]
+    user_fit: high
+    ai_fit: high
+  data_ai_startup:
+    display_name: 공공데이터/AI/창업 경진대회형
+    keywords: [공공데이터, 데이터, AI, 인공지능, 분석, 경진대회, 해커톤, 창업, 오디션, 피칭, 데모데이]
+    user_fit: high
+    ai_fit: high
+  supporter_selected:
+    display_name: 서포터즈/선정형 활동
+    keywords: [서포터즈, 플레이어, 선정, 기자단, 앰배서더, 메이트, 참가단]
+    user_fit: medium
+    ai_fit: medium
+public_sector_keywords:
+  - 정부
+  - 부처
+  - 시청
+  - 도청
+  - 구청
+  - 군청
+  - 공사
+  - 공단
+  - 공공
+  - 진흥원
+  - 진흥센터
+  - 재단
+  - 협의회
+  - 청
+  - 국회
+  - 관광공사
+  - 적십자
+  - 고용노동부
+  - 과학기술정보통신부
+  - 산업통상자원부
+  - 보건복지부
+ai_high_keywords:
+  - 아이디어
+  - 제안
+  - 정책
+  - 공공데이터
+  - AI
+  - 인공지능
+  - 데이터
+  - 숏폼
+  - 영상
+  - UCC
+  - 발표자료
+ai_medium_keywords:
+  - 서포터즈
+  - 평가단
+  - 모니터링
+  - 홍보
+  - 창업
+offline_burden_keywords:
+  - 오프라인
+  - 현장발표
+  - 본선발표
+  - PT
+  - 팀빌딩
+  - 숙박
+  - 출석
+  - 면접
+public_vote_keywords:
+  - 공개투표
+  - 좋아요
+  - 추천수
+  - 인기투표
+  - 온라인투표
+copyright_toxic_keywords:
+  - 저작재산권 일체
+  - 2차적 저작물 작성권
+  - 포괄적 이용권
+  - 영구 사용
+  - 일체 귀속
+hard_restriction_keywords:
+  - 대학생만
+  - 재학생만
+  - 해당 지역 거주자
+  - 주민등록
+  - 만 19세 이하
+  - 만 34세 이하
+heavy_work_keywords:
+  - 사업계획서
+  - 시제품
+  - 프로토타입
+  - 20페이지
+  - 30페이지
+  - 상세 설계
+  - 현장심사
+prize_keywords:
+  - 대상
+  - 최우수상
+  - 우수상
+  - 상금
+money_regex:
+  - '(?P<amount>[0-9]{1,4})\s*만원'
+  - '(?P<amount>[0-9]{1,3}(?:,[0-9]{3})+)\s*원'

@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+.env
+.local/*.log
+.local/*.json
+.local/*.sqlite3
+.local/*.db
+.local/github_pat.txt
+*.sqlite3
+*.db
+logs/runtime/
+logs/output/
+logs/*.log

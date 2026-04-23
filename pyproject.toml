@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "public-prize-contest-radar"
+version = "0.1.0"
+description = "AI-based radar for high-fit public-sector prize contests"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "salimriceball-star" }
+]
+dependencies = [
+  "beautifulsoup4>=4.12",
+  "PyYAML>=6.0"
+]
+
+[project.scripts]
+contest-radar = "contest_radar.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

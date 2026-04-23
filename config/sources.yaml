@@ -1,0 +1,94 @@
+defaults:
+  request_timeout_seconds: 20
+  min_anchor_text_length: 6
+  max_anchor_text_length: 140
+  user_agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36
+sources:
+  - id: thinkcontest-home
+    name: Thinkgood Home
+    kind: anchor_scan
+    url: https://www.thinkcontest.com/
+    enabled: true
+    link_builder: thinkcontest_contest
+    text_allow_patterns: [공모전, 경진대회, 대회, 숏폼, 영상, 아이디어, 데이터, AI, UCC, 제안, 슬로건, 명칭]
+    text_deny_patterns: [회원가입, 공고등록, 수상작 갤러리, 전략&통계, 커뮤니티]
+    source_bias: 8
+    public_sector_bias: 4
+  - id: wevity-all
+    name: Wevity 전체 공모전
+    kind: anchor_scan
+    url: https://www.wevity.com/?c=find&s=1&gub=1
+    enabled: true
+    text_allow_patterns: [공모전, 경진대회, 대회, 숏폼, 영상, 아이디어, 데이터, AI, UCC, 창업]
+    text_deny_patterns: [전체 공모전, 공모전전략, 공모전자료, 기획/아이디어, 영상/UCC/사진]
+    path_allow_patterns: [gbn=view]
+    source_bias: 7
+    public_sector_bias: 3
+  - id: linkareer-contest
+    name: Linkareer 공모전 목록
+    kind: anchor_scan
+    url: https://linkareer.com/list/contest
+    enabled: true
+    text_allow_patterns: [공모전, 경진대회, 대회, 숏폼, 영상, 아이디어, 데이터, AI, UCC, 창업, 해커톤]
+    text_deny_patterns: [대외활동/교육/공모전, 대학생 필수, 인기 공모전]
+    path_allow_patterns: [/activity/]
+    source_bias: 7
+    public_sector_bias: 3
+  - id: dacon-open
+    name: DACON Open Competitions
+    kind: anchor_scan
+    url: https://www.dacon.io/competitions/open
+    enabled: true
+    text_allow_patterns: [대회, competition, 해커톤, AI, 데이터, 분석, 경진대회]
+    text_deny_patterns: [로그인, 회원가입, 공지사항]
+    source_bias: 6
+    public_sector_bias: 1
+  - id: kstartup-biz
+    name: K-Startup 모집중
+    kind: anchor_scan
+    url: https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do
+    enabled: true
+    text_allow_patterns: [공고, 창업, 지원사업, 아이디어, 혁신, 경진대회, 데모데이, 오디션]
+    text_deny_patterns: [창업길라잡이, 창업성공사례, 창업통계, 시스템 매뉴얼, 혁신창업생태계]
+    source_bias: 6
+    public_sector_bias: 5
+  - id: thinkyou-contest
+    name: Thinkyou 공모전
+    kind: anchor_scan
+    url: https://www.thinkyou.co.kr/contest/
+    enabled: false
+    text_allow_patterns: [공모전, 경진대회, 대회, 숏폼, 영상, 아이디어, 데이터, AI]
+    text_deny_patterns: [공모전 대행안내, 공모전 무료 등록]
+    source_bias: 5
+    public_sector_bias: 2
+    notes: 현재 구조가 얕아 별도 selector 또는 카테고리 URL 튜닝 필요
+  - id: contestkorea-all
+    name: Contest Korea 전체 공모전
+    kind: anchor_scan
+    url: https://www.contestkorea.com/sub/list.php?int_gbn=1
+    enabled: false
+    text_allow_patterns: [공모전, 경진대회, 대회, 숏폼, 영상, 아이디어, 데이터, AI]
+    text_deny_patterns: [대회·공모전, 전체 대회, 공모전 찾는 방법]
+    source_bias: 5
+    public_sector_bias: 2
+    notes: 메뉴 링크 노이즈가 많아 상세 selector 추가 전까지 비활성
+  - id: sotong24-public
+    name: 소통24 공모/수상작
+    kind: anchor_scan
+    url: https://sotong.go.kr/front/epilogue/epilogueNewListPage.do
+    enabled: false
+    text_allow_patterns: [공모, 정책, 제안, 수상작, 국민, 참여]
+    text_deny_patterns: [로그인, 회원가입]
+    source_bias: 9
+    public_sector_bias: 6
+    notes: 현재 단순 urllib 수집 시 connection reset 발생. 브라우저 또는 재시도 전략 필요
+  - id: seed-agency-template
+    name: Seed Agency Notice Template
+    kind: anchor_scan
+    url: https://example.go.kr/notice
+    enabled: false
+    text_allow_patterns: [공모, 제안, 아이디어, 영상, UCC, 데이터, AI]
+    text_deny_patterns: [공지, 일반]
+    source_bias: 8
+    public_sector_bias: 6
+    notes: seed 기관별 원문 공지 URL을 복제해서 추가한다
