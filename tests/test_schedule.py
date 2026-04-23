@@ -8,23 +8,22 @@ from contest_radar.schedule import describe_schedule, filter_due_soon_records, r
 
 
 class ScheduleTest(unittest.TestCase):
-    def test_describe_schedule_includes_monitoring_and_alert_times(self):
+    def test_describe_schedule_includes_daily_2200_update(self):
         summary = describe_schedule()
-        self.assertIn("08:05 KST", summary)
-        self.assertIn("12:35 KST", summary)
-        self.assertIn("18:35 KST", summary)
-        self.assertIn("09:00 KST", summary)
+        self.assertIn("22:00 KST", summary)
+        self.assertIn("Daily 22:00 KST new public contest update", summary)
+        self.assertNotIn("08:05 KST", summary)
+        self.assertNotIn("12:35 KST", summary)
+        self.assertNotIn("18:35 KST", summary)
 
-    def test_render_crontab_maps_kst_schedule_to_utc_runtime_commands(self):
+    def test_render_crontab_maps_daily_2200_kst_to_1300_utc_script(self):
         crontab = render_crontab()
         self.assertIn("# public-prize-contest-radar BEGIN", crontab)
-        self.assertIn("5 23 * * *", crontab)
-        self.assertIn("35 3 * * *", crontab)
-        self.assertIn("35 9 * * *", crontab)
-        self.assertIn("0 0 * * *", crontab)
-        self.assertIn("scripts/run_radar.sh run-once --top 10 --public-only --min-score 40 --notify", crontab)
-        self.assertIn("scripts/run_radar.sh due-soon --public-only --min-score 40 --notify", crontab)
-        self.assertIn("logs/cron/morning-monitor.log", crontab)
+        self.assertIn("0 13 * * *", crontab)
+        self.assertIn("scripts/daily_contest_update.sh", crontab)
+        self.assertIn("logs/cron/daily-contest-update.log", crontab)
+        self.assertNotIn("morning-monitor", crontab)
+        self.assertNotIn("due-soon-alert", crontab)
 
     def test_filter_due_soon_records_groups_7_3_1_day_alerts(self):
         records = [

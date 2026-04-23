@@ -52,12 +52,10 @@ AI 기반 공공형 상금 공모전 모니터링 시스템.
 
 운영 설정
 - `config/runtime.yaml`: BrowserOS 반복 예산, 기존 탭 재사용, 새 탭 자동 닫기, 공공형/최소점수 기본 운영값을 둔다.
-- `config/schedule.yaml`: Asia/Seoul 기준 일일 4개 작업을 UTC cron 식으로 보관한다.
-  - 08:05 KST: 전체 모니터 + digest 알림
-  - 12:35 KST: 무음 refresh
-  - 18:35 KST: 전체 모니터 + digest 알림
-  - 09:00 KST: D-7/D-3/D-1 마감 알림
-- `scripts/run_radar.sh`: cron에서 쓰는 공식 실행 진입점이며 `.local/runtime.env`가 있으면 로드한다.
+- `config/schedule.yaml`: Asia/Seoul 기준 매일 22:00 KST 1회 업데이트 작업을 UTC cron 식으로 보관한다.
+  - 22:00 KST / 13:00 UTC: 신규 공공형 공모전만 추려 digest 알림
+- `scripts/run_radar.sh`: 공통 CLI 실행 진입점이며 `.local/runtime.env`가 있으면 로드한다.
+- `scripts/daily_contest_update.sh`: cron에서 매일 실행하는 신규 공모전 업데이트 스크립트다. 기본값은 `run-once --new-only --top 10 --public-only --min-score 40 --notify`다.
 - BrowserOS/CDP는 `127.0.0.1:9100`을 기본 사용한다. `127.0.0.1:9200/health`가 내려가도 CDP `/json/version`이 살아 있으면 수집을 계속한다.
 - Telegram bot token, GitHub PAT 등 민감값은 `.local/` 또는 환경변수에만 두고 문서/커밋에 기록하지 않는다.
 

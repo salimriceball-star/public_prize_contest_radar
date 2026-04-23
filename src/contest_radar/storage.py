@@ -107,6 +107,18 @@ def lookup_repeat_counts(conn: sqlite3.Connection, titles: Iterable[str]) -> dic
     return {row["repeat_key"]: int(row["seen_count"]) for row in rows}
 
 
+def lookup_existing_fingerprints(conn: sqlite3.Connection, fingerprints: Iterable[str]) -> set[str]:
+    keys = sorted({fingerprint for fingerprint in fingerprints if fingerprint})
+    if not keys:
+        return set()
+    placeholders = ",".join("?" for _ in keys)
+    rows = conn.execute(
+        f"SELECT fingerprint FROM contests WHERE fingerprint IN ({placeholders})",
+        keys,
+    ).fetchall()
+    return {str(row["fingerprint"]) for row in rows}
+
+
 def row_to_record(row: sqlite3.Row) -> ContestRecord:
     return ContestRecord(
         fingerprint=row["fingerprint"],

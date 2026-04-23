@@ -55,7 +55,9 @@ sources:
     url: https://www.dacon.io/competitions/open
     enabled: true
     text_allow_patterns: [대회, competition, 해커톤, AI, 데이터, 분석, 경진대회]
-    text_deny_patterns: [로그인, 회원가입, 공지사항, 랭킹, 토론]
+    text_deny_patterns: [로그인, 회원가입, 공지사항, 랭킹, 토론, 대회 참가 방법, 자주 묻는 대회 질문]
+    path_allow_patterns: [/competitions/]
+    path_deny_patterns: [/more/, /notice/, /rankings/, /talk/]
     source_bias: 6
     public_sector_bias: 1
     listing_limit: 8
@@ -69,7 +71,8 @@ sources:
     url: https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do
     enabled: true
     text_allow_patterns: [공고, 창업, 지원사업, 아이디어, 혁신, 경진대회, 데모데이, 오디션]
-    text_deny_patterns: [창업길라잡이, 창업성공사례, 창업통계, 시스템 매뉴얼, 혁신창업생태계, 기업마당, 소상공인마당]
+    text_deny_patterns: [모집중, 창업지원사업 통합공고, 사업신청관리, 자주하는 질문, 창업길라잡이, 창업성공사례, 창업통계, 시스템 매뉴얼, 혁신창업생태계, 기업마당, 소상공인마당]
+    path_deny_patterns: [webFSBIPBANC.do]
     source_bias: 6
     public_sector_bias: 5
     listing_limit: 8

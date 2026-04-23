@@ -116,7 +116,8 @@ def _apply_record_filters(records, public_only: bool, min_score: int):
 def _cmd_run_once(args: argparse.Namespace) -> int:
     source_ids = set(args.source_id) if args.source_id else None
     result = run_once(db_path=args.db, sources_path=args.sources, categories_path=args.categories, enabled_source_ids=source_ids)
-    filtered_records = _apply_record_filters(result["records"], public_only=args.public_only, min_score=args.min_score)
+    records_key = "new_records" if args.new_only else "records"
+    filtered_records = _apply_record_filters(result[records_key], public_only=args.public_only, min_score=args.min_score)
     digest = render_digest(filtered_records, top_n=args.top)
     print(digest)
     if result["errors"]:
@@ -182,6 +183,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--top", type=int, default=10)
     run_parser.add_argument("--source-id", action="append")
     run_parser.add_argument("--notify", action="store_true")
+    run_parser.add_argument("--new-only", action="store_true", help="Render/notify only records first inserted in this run")
     run_parser.add_argument("--public-only", action="store_true")
     run_parser.add_argument("--min-score", type=int, default=0)
     run_parser.add_argument("--bot-token")

@@ -4,6 +4,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
+import shlex
 from typing import Iterable
 
 import yaml
@@ -61,16 +62,22 @@ def describe_schedule(path: str | Path = DEFAULT_SCHEDULE_PATH) -> str:
 
 def command_for_entry(entry: ScheduleEntry, project_root: str | Path = PROJECT_ROOT) -> str:
     root = Path(project_root)
-    script = root / "scripts" / "run_radar.sh"
     log_path = root / "logs" / "cron" / f"{entry.id}.log"
-    if entry.id == "due-soon-alert":
-        args = ["due-soon", "--public-only", "--min-score", "40"]
+    if entry.id == "daily-contest-update":
+        script = root / "scripts" / "daily_contest_update.sh"
+        command = shlex.quote(str(script))
+        if not entry.notify:
+            command = "CONTEST_RADAR_NOTIFY=0 " + command
     else:
-        args = ["run-once", "--top", "10", "--public-only", "--min-score", "40"]
-    if entry.notify:
-        args.append("--notify")
-    command = " ".join([str(script), *args])
-    return f"cd {root} && mkdir -p logs/cron && {command} >> {log_path} 2>&1"
+        script = root / "scripts" / "run_radar.sh"
+        if entry.id == "due-soon-alert":
+            args = ["due-soon", "--public-only", "--min-score", "40"]
+        else:
+            args = ["run-once", "--top", "10", "--public-only", "--min-score", "40"]
+        if entry.notify:
+            args.append("--notify")
+        command = " ".join([shlex.quote(str(script)), *(shlex.quote(arg) for arg in args)])
+    return f"cd {shlex.quote(str(root))} && mkdir -p logs/cron && {command} >> {shlex.quote(str(log_path))} 2>&1"
 
 
 def render_crontab(path: str | Path = DEFAULT_SCHEDULE_PATH, project_root: str | Path = PROJECT_ROOT) -> str:

@@ -79,6 +79,31 @@ class BrowserOSParsingTest(unittest.TestCase):
                 self.assertGreater(len(source.detail_date_selectors), 0)
                 self.assertGreater(len(source.detail_content_selectors), 0)
 
+    def test_dacon_source_filters_menu_help_links_from_daily_updates(self):
+        _defaults, sources = load_sources()
+        source = next(item for item in sources if item.id == "dacon-open")
+        payload = {
+            "anchors": [
+                {"text": "대회 참가 방법", "href": "/more/join", "fullHref": "https://www.dacon.io/more/join", "parentText": "더보기 대회 참가 방법"},
+                {"text": "공공데이터 AI 경진대회", "href": "/competitions/open/123", "fullHref": "https://www.dacon.io/competitions/open/123", "parentText": "공공데이터 AI 경진대회"},
+            ]
+        }
+        listings = parse_browseros_listing_payload(source, payload)
+        self.assertEqual([item.title for item in listings], ["공공데이터 AI 경진대회"])
+
+    def test_kstartup_source_filters_generic_listing_navigation(self):
+        _defaults, sources = load_sources()
+        source = next(item for item in sources if item.id == "kstartup-biz")
+        payload = {
+            "anchors": [
+                {"text": "모집중", "href": "/web/contents/bizpbanc-ongoing.do", "fullHref": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do", "parentText": "모집중"},
+                {"text": "2026년 창업지원사업 통합공고", "href": "/web/contents/webFSBIPBANC.do", "fullHref": "https://www.k-startup.go.kr/web/contents/webFSBIPBANC.do", "parentText": "2026년 창업지원사업 통합공고"},
+                {"text": "공공데이터 창업 경진대회 참가자 모집 공고", "href": "/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=123", "fullHref": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=123", "parentText": "공공데이터 창업 경진대회 참가자 모집 공고"},
+            ]
+        }
+        listings = parse_browseros_listing_payload(source, payload)
+        self.assertEqual([item.title for item in listings], ["공공데이터 창업 경진대회 참가자 모집 공고"])
+
     def test_extract_detail_metadata_prefers_specific_title_date_and_content(self):
         listing = RawListing(
             source_id="wevity-all",

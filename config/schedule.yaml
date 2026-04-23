@@ -1,22 +1,7 @@
 timezone: Asia/Seoul
 entries:
-  - id: morning-monitor
-    purpose: Morning full monitor + top digest alert
-    kst_time: "08:05"
-    cron_utc: "5 23 * * *"
-    notify: true
-  - id: midday-monitor
-    purpose: Midday silent monitor refresh
-    kst_time: "12:35"
-    cron_utc: "35 3 * * *"
-    notify: false
-  - id: evening-monitor
-    purpose: Evening full monitor + top digest alert
-    kst_time: "18:35"
-    cron_utc: "35 9 * * *"
-    notify: true
-  - id: due-soon-alert
-    purpose: Due-soon D-7/D-3/D-1 alert scan
-    kst_time: "09:00"
-    cron_utc: "0 0 * * *"
+  - id: daily-contest-update
+    purpose: Daily 22:00 KST new public contest update
+    kst_time: "22:00"
+    cron_utc: "0 13 * * *"
     notify: true

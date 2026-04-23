@@ -9,7 +9,7 @@ from .config_loader import DEFAULT_CATEGORIES_PATH, DEFAULT_DB_PATH, DEFAULT_SOU
 from .models import ContestRecord, RawListing, SourceSpec
 from .normalize import canonicalize_url, fingerprint_for, repeat_key_from_title
 from .scoring import score_listing
-from .storage import connect, init_db, lookup_repeat_counts, record_run, upsert_records
+from .storage import connect, init_db, lookup_existing_fingerprints, lookup_repeat_counts, record_run, upsert_records
 
 
 def _dedupe_listings(listings: Iterable[RawListing]) -> list[RawListing]:
@@ -60,6 +60,8 @@ def run_once(
             repeat_count = repeat_lookup.get(repeat_key_from_title(listing.title), 0)
             records.append(score_listing(listing, source, categories, repeat_count=repeat_count))
         records.sort(key=lambda item: item.score, reverse=True)
+        existing_fingerprints = lookup_existing_fingerprints(conn, [record.fingerprint for record in records])
+        new_records = [record for record in records if record.fingerprint not in existing_fingerprints]
         inserted = upsert_records(conn, records)
     return {
         "run_started_at": started_at,
@@ -67,6 +69,8 @@ def run_once(
         "collected_count": len(collected),
         "deduped_count": len(deduped),
         "inserted_count": inserted,
+        "new_count": len(new_records),
         "errors": errors,
         "records": records,
+        "new_records": new_records,
     }
