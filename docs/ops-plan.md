@@ -32,6 +32,21 @@ Telegram 운영 기준
 - 현재 master id: `779460653`
 - 식별 기준: private chat `@Rktan6` / display name `낙관적인 비관론자`
 - notifier 는 `TELEGRAM_BOT_TOKEN` 과 `TELEGRAM_MASTER_ID=779460653` 조합을 기본 운영값으로 사용한다.
+- token 값은 `.local/runtime.env` 또는 실행 환경변수에만 저장하고 문서/로그/커밋에 기록하지 않는다.
+
+BrowserOS/CDP 운영 기준
+- 동적/차단성 목록은 `browseros_anchor_scan`으로 수집하고 상세 페이지는 `browseros_detail`로 보강한다.
+- `config/runtime.yaml`의 기본값은 `iteration_budget: 9999`, `reuse_existing_tabs: true`, `close_new_tabs_after_use: true`다.
+- 새로 연 CDP 탭은 기본적으로 닫아 탭 누적/메모리 압박을 막는다. 기존 탭을 재사용한 경우에는 사용자의 기존 탭을 닫지 않는다.
+- `127.0.0.1:9200/health`가 내려가도 `127.0.0.1:9100/json/version`이 응답하면 BrowserOS 사용 가능 상태로 본다.
+- CDP websocket 연결은 origin 거절을 피하기 위해 `suppress_origin=True`를 사용한다.
+
+스케줄/cron 운영 기준
+- 기준 시간대는 Asia/Seoul이며 `config/schedule.yaml`은 UTC cron 식을 함께 보관한다.
+- 공식 반복 작업은 `python3 -m contest_radar.cli render-crontab` 출력 block을 사용자 crontab에 설치한다.
+- 현재 작업: 08:05 KST 알림 monitor, 12:35 KST 무음 refresh, 18:35 KST 알림 monitor, 09:00 KST D-7/D-3/D-1 마감 알림.
+- cron 진입점은 `scripts/run_radar.sh`이며 `.local/runtime.env`를 로드한 뒤 `PYTHONPATH`를 설정한다.
+- cron 로그는 `logs/cron/`에 쌓으며 git 추적 대상이 아니다.
 
 미해결 사항
 - 일부 공공 사이트는 anti-bot 또는 접속 제한이 있어 source 설정 튜닝이 필요함

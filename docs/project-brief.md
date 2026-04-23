@@ -22,4 +22,5 @@
 - 공모전 유입 경로 지도
 - 사용자 적합 분야 우선순위표
 - 매일/매주 감시할 핵심 소스 리스트
-- Telegram digest 전송 루틴
+- BrowserOS/CDP 기반 동적 목록/상세 수집 루틴
+- Telegram digest 및 마감 임박 알림 전송 루틴

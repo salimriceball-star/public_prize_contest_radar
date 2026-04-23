@@ -9,6 +9,7 @@ from typing import Iterable
 
 from bs4 import BeautifulSoup, Tag
 
+from .browseros_collectors import collect_browseros_anchor_scan
 from .models import RawListing, SourceSpec
 from .normalize import canonicalize_url, collapse_whitespace
 
@@ -101,13 +102,15 @@ def collect_anchor_scan(source: SourceSpec, defaults: dict[str, object]) -> list
 def collect_source(source: SourceSpec, defaults: dict[str, object]) -> list[RawListing]:
     if not source.enabled:
         return []
-    if source.kind != "anchor_scan":
-        raise ValueError(f"Unsupported source kind: {source.kind}")
-    return collect_anchor_scan(source, defaults)
+    if source.kind == "anchor_scan":
+        return collect_anchor_scan(source, defaults)
+    if source.kind == "browseros_anchor_scan":
+        return collect_browseros_anchor_scan(source, defaults)
+    raise ValueError(f"Unsupported source kind: {source.kind}")
 
 
 def safe_collect_source(source: SourceSpec, defaults: dict[str, object]) -> tuple[list[RawListing], str | None]:
     try:
         return collect_source(source, defaults), None
-    except (urllib.error.URLError, TimeoutError, ValueError) as exc:
+    except Exception as exc:
         return [], f"{type(exc).__name__}: {exc}"

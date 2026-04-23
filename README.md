@@ -43,6 +43,24 @@ AI 기반 공공형 상금 공모전 모니터링 시스템.
    export TELEGRAM_MASTER_ID='779460653'
    python3 -m contest_radar.cli run-once --top 10 --notify
 
+6. BrowserOS/CDP 수집 1회 검증
+   python3 -m contest_radar.cli run-once --source-id thinkcontest-home --top 5 --public-only --min-score 40
+
+7. 운영 스케줄 확인
+   python3 -m contest_radar.cli show-schedule
+   python3 -m contest_radar.cli render-crontab
+
+운영 설정
+- `config/runtime.yaml`: BrowserOS 반복 예산, 기존 탭 재사용, 새 탭 자동 닫기, 공공형/최소점수 기본 운영값을 둔다.
+- `config/schedule.yaml`: Asia/Seoul 기준 일일 4개 작업을 UTC cron 식으로 보관한다.
+  - 08:05 KST: 전체 모니터 + digest 알림
+  - 12:35 KST: 무음 refresh
+  - 18:35 KST: 전체 모니터 + digest 알림
+  - 09:00 KST: D-7/D-3/D-1 마감 알림
+- `scripts/run_radar.sh`: cron에서 쓰는 공식 실행 진입점이며 `.local/runtime.env`가 있으면 로드한다.
+- BrowserOS/CDP는 `127.0.0.1:9100`을 기본 사용한다. `127.0.0.1:9200/health`가 내려가도 CDP `/json/version`이 살아 있으면 수집을 계속한다.
+- Telegram bot token, GitHub PAT 등 민감값은 `.local/` 또는 환경변수에만 두고 문서/커밋에 기록하지 않는다.
+
 주요 문서
 - docs/project-brief.md
 - docs/ops-plan.md

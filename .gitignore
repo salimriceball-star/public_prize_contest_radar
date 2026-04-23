@@ -8,9 +8,12 @@ __pycache__/
 .local/*.json
 .local/*.sqlite3
 .local/*.db
+.local/*.env
+.local/site-packages/
 .local/github_pat.txt
 *.sqlite3
 *.db
 logs/runtime/
 logs/output/
+logs/cron/
 logs/*.log

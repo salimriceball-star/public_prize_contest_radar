@@ -1,0 +1,9 @@
+browseros:
+  iteration_budget: 9999
+  reuse_existing_tabs: true
+  close_new_tabs_after_use: true
+monitoring:
+  public_only: true
+  min_score: 60
+notifications:
+  telegram_master_id: 779460653

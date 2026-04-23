@@ -19,6 +19,14 @@ class SourceSpec:
     path_deny_patterns: list[str] = field(default_factory=list)
     source_bias: int = 0
     public_sector_bias: int = 0
+    listing_limit: int = 12
+    detail_limit: int = 8
+    detail_fetch: str | None = None
+    load_wait_seconds: float = 3.0
+    detail_wait_seconds: float = 3.5
+    detail_title_selectors: list[str] = field(default_factory=list)
+    detail_date_selectors: list[str] = field(default_factory=list)
+    detail_content_selectors: list[str] = field(default_factory=list)
     notes: str = ""
 
 
@@ -31,6 +39,11 @@ class RawListing:
     url: str
     snippet: str = ""
     observed_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    detail_title: str | None = None
+    detail_date_text: str | None = None
+    detail_content: str | None = None
+    deadline_text: str | None = None
+    deadline_date_iso: str | None = None
     extras: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -75,10 +88,14 @@ class ContestRecord:
     repeat_count: int
     prize_amount_krw: int | None
     deadline_text: str | None
-    host_guess: str | None
-    reasons: list[str]
-    penalties: dict[str, int]
-    raw: dict[str, Any]
+    deadline_date_iso: str | None = None
+    detail_title: str | None = None
+    detail_date_text: str | None = None
+    detail_content: str | None = None
+    host_guess: str | None = None
+    reasons: list[str] = field(default_factory=list)
+    penalties: dict[str, int] = field(default_factory=dict)
+    raw: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

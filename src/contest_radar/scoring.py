@@ -4,7 +4,7 @@ import re
 from typing import Any
 
 from .models import ContestRecord, RawListing, ScoreBreakdown, SourceSpec
-from .normalize import extract_deadline_text, fingerprint_for, normalize_title
+from .normalize import extract_deadline_date_iso, extract_deadline_text, fingerprint_for, normalize_title
 
 _BRACKET_HOST_RE = re.compile(r"^[\[\(]([^\]\)]+)[\]\)]")
 
@@ -145,22 +145,32 @@ def _extract_host_guess(title: str) -> str | None:
 
 
 def score_listing(raw: RawListing, source: SourceSpec, categories: dict[str, Any], repeat_count: int = 0) -> ContestRecord:
-    text = f"{raw.title} {raw.snippet}".strip()
-    lane, lane_config, lane_hits = detect_lane(text, categories)
-    amount_krw = parse_prize_amount_krw(text, categories)
-    prize_score = _score_prize(text, amount_krw, categories)
-    user_fit_level = _fit_level_from_text(text, lane_config.get("user_fit", "low"), [], [])
+    title_for_scoring = raw.detail_title or raw.title
+    full_text = " ".join(
+        part
+        for part in [title_for_scoring, raw.detail_date_text, raw.detail_content, raw.snippet]
+        if part
+    ).strip()
+    public_text = " ".join(
+        part
+        for part in [title_for_scoring, raw.detail_date_text, (raw.detail_content or "")[:500], raw.snippet]
+        if part
+    ).strip()
+    lane, lane_config, lane_hits = detect_lane(full_text, categories)
+    amount_krw = parse_prize_amount_krw(full_text, categories)
+    prize_score = _score_prize(full_text, amount_krw, categories)
+    user_fit_level = _fit_level_from_text(full_text, lane_config.get("user_fit", "low"), [], [])
     ai_fit_level = _fit_level_from_text(
-        text,
+        full_text,
         lane_config.get("ai_fit", "low"),
         categories.get("ai_high_keywords", []),
         categories.get("ai_medium_keywords", []),
     )
     user_fit_score = _fit_points(user_fit_level, int(categories["weights"]["user_fit"]))
     ai_fit_score = _fit_points(ai_fit_level, int(categories["weights"]["ai_fit"]))
-    public_sector_score, public_sector = _public_sector_score(text, source, categories)
+    public_sector_score, public_sector = _public_sector_score(public_text, source, categories)
     repeatable_score = _repeatable_score(repeat_count, categories)
-    burden_bonus, penalties = _burden_bonus_and_penalties(text, amount_krw, categories)
+    burden_bonus, penalties = _burden_bonus_and_penalties(full_text, amount_krw, categories)
     source_confidence_bonus = min(5, max(0, int(source.source_bias)))
     total = max(
         0,
@@ -176,6 +186,8 @@ def score_listing(raw: RawListing, source: SourceSpec, categories: dict[str, Any
             + sum(penalties.values()),
         ),
     )
+    deadline_text = raw.deadline_text or extract_deadline_text(full_text)
+    deadline_date_iso = raw.deadline_date_iso or extract_deadline_date_iso(full_text)
     reasons = [
         f"트랙={lane_config.get('display_name', lane)}({lane_hits}개 키워드 매치)",
         f"사용자 적합도={user_fit_level}",
@@ -183,8 +195,12 @@ def score_listing(raw: RawListing, source: SourceSpec, categories: dict[str, Any
         f"공공성={'높음' if public_sector else '중간'}",
         f"소스 신뢰 가중치={source_confidence_bonus}",
     ]
+    if raw.detail_title or raw.detail_date_text or raw.detail_content:
+        reasons.append("BrowserOS 상세 파싱 적용")
     if amount_krw:
         reasons.append(f"상금 추정={amount_krw:,}원")
+    if deadline_date_iso:
+        reasons.append(f"마감일 추정={deadline_date_iso}")
     if repeat_count:
         reasons.append(f"반복 개최 히스토리={repeat_count}회")
     if penalties:
@@ -206,8 +222,8 @@ def score_listing(raw: RawListing, source: SourceSpec, categories: dict[str, Any
     raw_payload["score_breakdown"] = breakdown.to_dict()
     return ContestRecord(
         fingerprint=fingerprint_for(raw.title, raw.url),
-        normalized_title=normalize_title(raw.title),
-        title=raw.title,
+        normalized_title=normalize_title(title_for_scoring),
+        title=title_for_scoring,
         url=raw.url,
         source_id=raw.source_id,
         source_name=raw.source_name,
@@ -222,8 +238,12 @@ def score_listing(raw: RawListing, source: SourceSpec, categories: dict[str, Any
         user_fit=user_fit_level,
         repeat_count=repeat_count,
         prize_amount_krw=amount_krw,
-        deadline_text=extract_deadline_text(text),
-        host_guess=_extract_host_guess(raw.title),
+        deadline_text=deadline_text,
+        deadline_date_iso=deadline_date_iso,
+        detail_title=raw.detail_title,
+        detail_date_text=raw.detail_date_text,
+        detail_content=raw.detail_content,
+        host_guess=_extract_host_guess(title_for_scoring),
         reasons=reasons,
         penalties=penalties,
         raw=raw_payload,

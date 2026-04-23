@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from contest_radar.collectors import collect_anchor_scan
+from contest_radar.collectors import collect_anchor_scan, safe_collect_source
 from contest_radar.models import SourceSpec
 
 
@@ -50,6 +50,17 @@ class CollectorsTest(unittest.TestCase):
         )
         items = collect_anchor_scan(source, {"request_timeout_seconds": 5, "user_agent": "test", "min_anchor_text_length": 3})
         self.assertEqual([item.title for item in items], ["좋은 공모전"])
+
+    @patch("contest_radar.collectors.collect_source")
+    def test_safe_collect_source_converts_unexpected_exception_to_error_text(self, mock_collect_source):
+        class CustomError(Exception):
+            pass
+
+        source = SourceSpec(id="boom", name="Boom", kind="anchor_scan", url="https://example.com")
+        mock_collect_source.side_effect = CustomError("boom")
+        items, error_text = safe_collect_source(source, {})
+        self.assertEqual(items, [])
+        self.assertIn("CustomError: boom", error_text)
 
 
 if __name__ == "__main__":

@@ -28,3 +28,18 @@
 - [x] `PYTHONPATH=src python3 -m unittest discover -s tests -v` -> 7 tests OK
 - [x] `PYTHONPATH=src python3 -m contest_radar.cli run-once --top 8 --save-output latest-digest.txt`
 - [x] `PYTHONPATH=src python3 -m contest_radar.cli resolve-master-id --bot-token ...` -> master id `779460653` 확인
+
+## Milestone 3: BrowserOS/CDP Ops Hardening
+
+- [x] BrowserOS/CDP 기반 `browseros_anchor_scan` 소스 전환
+- [x] 상세 페이지 title/date/content/deadline 파싱 및 SQLite 저장 필드 보강
+- [x] schedule/runtime 설정 파일 추가
+- [x] 새 CDP 탭 자동 닫기 및 `/json/version` health fallback 적용
+- [x] D-7/D-3/D-1 마감 알림 렌더링 추가
+- [x] cron block 렌더링 추가
+
+## Latest Validation Snapshot
+
+- [x] `PYTHONPATH=src python3 -m unittest discover -s tests -v` -> 29 tests OK
+- [x] `PYTHONPATH=src python3 -m contest_radar.cli run-once --source-id thinkcontest-home --top 5 --public-only --min-score 40 --save-output browseros-e2e-thinkcontest-post-review.txt` -> BrowserOS/CDP 실제 수집 OK
+- [x] `crontab -l` -> managed block 1개, morning/evening/due-soon 작업 설치 확인
