@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from contest_radar.browseros_cdp import (
     BrowserOSPage,
     BrowserOSUnavailable,
     CDPPageSession,
+    capture_url_screenshot,
     ensure_browseros_running,
+    evaluate_url,
     find_reusable_page,
     normalize_cdp_url,
     open_page,
@@ -94,6 +98,34 @@ class BrowserOSCDPTest(unittest.TestCase):
         self.assertTrue(session._ws.closed)
         urlopen.assert_called_once()
         self.assertIn("/json/close/tab-new", urlopen.call_args.args[0])
+
+    def test_capture_url_screenshot_saves_png_and_closes_tab(self):
+        calls = []
+
+        def fake_send(method, params=None):
+            calls.append((method, params or {}))
+            if method == "Page.captureScreenshot":
+                return {"data": "ZmFrZSBwbmcgYnl0ZXM="}
+            return {}
+
+        with tempfile.TemporaryDirectory() as tmpdir, patch("contest_radar.browseros_cdp.open_page") as open_page_mock, patch(
+            "contest_radar.browseros_cdp.CDPPageSession"
+        ) as session_cls:
+            open_page_mock.return_value = BrowserOSPage(
+                page_id="tab-shot",
+                websocket_url="ws://127.0.0.1:9100/devtools/page/tab-shot",
+                reused=False,
+            )
+            session = session_cls.return_value
+            session.send.side_effect = fake_send
+            output_path = capture_url_screenshot("https://example.com/post", Path(tmpdir) / "detail.png", wait_seconds=0)
+
+            self.assertEqual(output_path.name, "detail.png")
+            self.assertEqual(output_path.read_bytes(), b"fake png bytes")
+
+        self.assertIn(("Page.navigate", {"url": "https://example.com/post"}), calls)
+        self.assertIn(("Page.captureScreenshot", {"format": "png", "fromSurface": True, "captureBeyondViewport": True}), calls)
+        session.close.assert_called_once()
 
 
 if __name__ == "__main__":

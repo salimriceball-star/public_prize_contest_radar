@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 import re
+import urllib.parse
 from typing import Iterable
 
 from .browseros_cdp import evaluate_url
@@ -64,13 +65,30 @@ def _matches_any(text: str, patterns: Iterable[str]) -> bool:
     return any(pattern.lower() in lowered for pattern in patterns)
 
 
+def _is_kstartup_biz_source(source: SourceSpec) -> bool:
+    parsed = urllib.parse.urlparse(source.url)
+    return source.id == "kstartup-biz" or (
+        parsed.netloc.endswith("k-startup.go.kr") and parsed.path.endswith("/web/contents/bizpbanc-ongoing.do")
+    )
+
+
+def _is_kstartup_biz_detail_url(source: SourceSpec, url: str) -> bool:
+    if not _is_kstartup_biz_source(source):
+        return True
+    parsed = urllib.parse.urlparse(url)
+    query = dict(urllib.parse.parse_qsl(parsed.query, keep_blank_values=True))
+    return parsed.path.endswith("/web/contents/bizpbanc-ongoing.do") and query.get("schM") == "view" and bool(query.get("pbancSn"))
+
+
 def _path_allowed(source: SourceSpec, url: str) -> bool:
     lowered = url.lower()
+    if canonicalize_url(url) == canonicalize_url(source.url):
+        return False
     if source.path_allow_patterns and not any(pattern.lower() in lowered for pattern in source.path_allow_patterns):
         return False
     if source.path_deny_patterns and any(pattern.lower() in lowered for pattern in source.path_deny_patterns):
         return False
-    return True
+    return _is_kstartup_biz_detail_url(source, url)
 
 
 def _extract_contest_pk_from_javascript(*values: object) -> str | None:
@@ -87,13 +105,43 @@ def _extract_contest_pk_from_javascript(*values: object) -> str | None:
     return None
 
 
+def _extract_kstartup_pbanc_sn(*values: object) -> str | None:
+    for value in values:
+        text = str(value or "")
+        if not text:
+            continue
+        query_match = re.search(r"pbancSn\D{0,12}(\d{3,})", text, flags=re.IGNORECASE)
+        if query_match:
+            return query_match.group(1)
+        go_view_match = re.search(r"go_view\s*\(\s*['\"]?(\d{3,})['\"]?\s*\)", text, flags=re.IGNORECASE)
+        if go_view_match:
+            return go_view_match.group(1)
+    return None
+
+
+def _build_kstartup_bizpbanc_link(source: SourceSpec, row: dict) -> str | None:
+    pbanc_sn = _extract_kstartup_pbanc_sn(row.get("onclick"), row.get("href"), row.get("fullHref"), row.get("parentText"))
+    if not pbanc_sn:
+        return None
+    parsed = urllib.parse.urlparse(source.url)
+    query = dict(urllib.parse.parse_qsl(parsed.query, keep_blank_values=True))
+    query["schM"] = "view"
+    query["pbancSn"] = pbanc_sn
+    rebuilt = parsed._replace(query=urllib.parse.urlencode(query), fragment="")
+    return canonicalize_url(urllib.parse.urlunparse(rebuilt))
+
+
 def _build_link(source: SourceSpec, row: dict) -> str | None:
     href = collapse_whitespace(str(row.get("href") or ""))
     full_href = collapse_whitespace(str(row.get("fullHref") or ""))
+    if _is_kstartup_biz_source(source):
+        kstartup_link = _build_kstartup_bizpbanc_link(source, row)
+        if kstartup_link:
+            return kstartup_link
     if full_href and not full_href.lower().startswith("javascript"):
         return canonicalize_url(full_href)
     if href and not href.lower().startswith("javascript"):
-        return canonicalize_url(href)
+        return canonicalize_url(urllib.parse.urljoin(source.url, href))
     if source.link_builder == "thinkcontest_contest":
         contest_pk = row.get("contestPk") or row.get("contest_pk") or _extract_contest_pk_from_javascript(row.get("onclick"), href, full_href)
         if contest_pk:

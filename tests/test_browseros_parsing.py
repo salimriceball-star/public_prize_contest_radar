@@ -97,6 +97,7 @@ class BrowserOSParsingTest(unittest.TestCase):
         source = next(item for item in sources if item.id == "kstartup-biz")
         payload = {
             "anchors": [
+                {"text": "사업공고", "href": "/web/contents/bizpbanc-ongoing.do", "fullHref": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do", "parentText": "사업공고"},
                 {"text": "모집중", "href": "/web/contents/bizpbanc-ongoing.do", "fullHref": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do", "parentText": "모집중"},
                 {"text": "2026년 창업지원사업 통합공고", "href": "/web/contents/webFSBIPBANC.do", "fullHref": "https://www.k-startup.go.kr/web/contents/webFSBIPBANC.do", "parentText": "2026년 창업지원사업 통합공고"},
                 {"text": "공공데이터 창업 경진대회 참가자 모집 공고", "href": "/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=123", "fullHref": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=123", "parentText": "공공데이터 창업 경진대회 참가자 모집 공고"},
@@ -104,6 +105,29 @@ class BrowserOSParsingTest(unittest.TestCase):
         }
         listings = parse_browseros_listing_payload(source, payload)
         self.assertEqual([item.title for item in listings], ["공공데이터 창업 경진대회 참가자 모집 공고"])
+        self.assertNotIn(source.url, [item.url for item in listings])
+
+    def test_kstartup_source_rebuilds_javascript_go_view_detail_links(self):
+        _defaults, sources = load_sources()
+        source = next(item for item in sources if item.id == "kstartup-biz")
+        payload = {
+            "url": source.url,
+            "anchors": [
+                {
+                    "text": "공공데이터 AI 창업 경진대회 참가자 모집 공고",
+                    "href": "javascript:go_view(176892);",
+                    "fullHref": "javascript:go_view(176892);",
+                    "onclick": "",
+                    "parentText": "사업화 D-22 마감일자 2026-05-15 공공데이터 AI 창업 경진대회 참가자 모집 공고 창업진흥원 조회 45,187",
+                },
+            ],
+        }
+        listings = parse_browseros_listing_payload(source, payload)
+        self.assertEqual(len(listings), 1)
+        self.assertEqual(
+            listings[0].url,
+            "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=176892",
+        )
 
     def test_extract_detail_metadata_prefers_specific_title_date_and_content(self):
         listing = RawListing(

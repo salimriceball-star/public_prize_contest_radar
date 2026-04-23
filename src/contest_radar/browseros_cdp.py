@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import base64
 import json
 import subprocess
 import time
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
+from pathlib import Path
 
 from .config_loader import load_runtime_config
 from .normalize import canonicalize_url
@@ -164,5 +166,26 @@ def evaluate_url(url: str, expression: str, wait_seconds: float = 3.0) -> dict |
         session.send("Page.navigate", {"url": url})
         time.sleep(wait_seconds)
         return session.evaluate(expression)
+    finally:
+        session.close()
+
+
+def capture_url_screenshot(url: str, output_path: str | Path, wait_seconds: float = 3.0) -> Path:
+    page = open_page(url)
+    session = CDPPageSession(page)
+    path = Path(output_path)
+    try:
+        session.send("Page.enable")
+        session.send("Runtime.enable")
+        session.send("Page.bringToFront")
+        session.send("Page.navigate", {"url": url})
+        time.sleep(wait_seconds)
+        result = session.send("Page.captureScreenshot", {"format": "png", "fromSurface": True, "captureBeyondViewport": True})
+        image_data = str(result.get("data") or "")
+        if not image_data:
+            raise BrowserOSUnavailable("CDP screenshot response did not include image data")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(base64.b64decode(image_data))
+        return path
     finally:
         session.close()

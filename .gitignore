@@ -16,4 +16,6 @@ __pycache__/
 logs/runtime/
 logs/output/
 logs/cron/
+logs/screenshots/
 logs/*.log
+tmp/

@@ -3,16 +3,18 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .browseros_cdp import capture_url_screenshot
 from .config_loader import DEFAULT_CATEGORIES_PATH, DEFAULT_DB_PATH, DEFAULT_SOURCES_PATH
 from .pipeline import run_once
 from .reporting import render_digest, render_due_soon_digest
-from .schedule import DEFAULT_SCHEDULE_PATH, describe_schedule, render_crontab
+from .schedule import DEFAULT_SCHEDULE_PATH, describe_schedule, filter_due_soon_records, render_crontab
 from .storage import connect, fetch_all_records, init_db
-from .telegram import TelegramError, resolve_master_ids, send_message
+from .telegram import TelegramError, resolve_master_ids, send_message, send_message_with_photos
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -87,7 +89,64 @@ def _save_output(path_value: str | None, body: str) -> Path | None:
     return output_path
 
 
-def _maybe_notify(args: argparse.Namespace, body: str) -> int:
+def _safe_screenshot_stem(record: object, fallback: str) -> str:
+    fingerprint = str(getattr(record, "fingerprint", "") or "").strip()
+    title = str(getattr(record, "title", "") or "").strip()
+    source_id = str(getattr(record, "source_id", "") or "").strip()
+    raw = fingerprint or "-".join(part for part in [source_id, title[:40]] if part) or fallback
+    safe = re.sub(r"[^0-9A-Za-z가-힣._-]+", "-", raw).strip("-._")
+    return (safe or fallback)[:80]
+
+
+def _capture_notification_screenshots(
+    records,
+    top_n: int,
+    output_dir: Path | None = None,
+    wait_seconds: float = 3.0,
+) -> list[Path]:
+    if top_n <= 0:
+        return []
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    output_dir = output_dir or (PROJECT_ROOT / "logs" / "screenshots" / f"telegram-{timestamp}")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    screenshots: list[Path] = []
+    for idx, record in enumerate(list(records)[:top_n], start=1):
+        url = str(getattr(record, "url", "") or "").strip()
+        if not url:
+            continue
+        output_path = output_dir / f"{idx:02d}-{_safe_screenshot_stem(record, f'record-{idx}')}.png"
+        try:
+            screenshots.append(capture_url_screenshot(url, output_path, wait_seconds=wait_seconds))
+        except Exception as exc:
+            print(f"Screenshot capture failed for {url}: {exc}", file=sys.stderr)
+    return screenshots
+
+
+def _notification_screenshot_paths(args: argparse.Namespace, records, default_top: int) -> list[Path]:
+    if not getattr(args, "notify", False) or not getattr(args, "attach_screenshots", True):
+        return []
+    screenshot_top = getattr(args, "screenshot_top", None)
+    top_n = default_top if screenshot_top is None else int(screenshot_top)
+    screenshot_dir = getattr(args, "screenshot_dir", None)
+    output_dir = Path(screenshot_dir) if screenshot_dir else None
+    wait_seconds = float(getattr(args, "screenshot_wait_seconds", 3.0))
+    return _capture_notification_screenshots(records, top_n=top_n, output_dir=output_dir, wait_seconds=wait_seconds)
+
+
+def _digest_notification_records(records, top_n: int):
+    return sorted(records, key=lambda item: item.score, reverse=True)[:top_n]
+
+
+def _due_soon_notification_records(records, today=None):
+    today = today or datetime.utcnow().date()
+    grouped = filter_due_soon_records(records, today=today)
+    selected = []
+    for bucket in (7, 3, 1):
+        selected.extend(grouped.get(bucket, [])[:10])
+    return selected
+
+
+def _maybe_notify(args: argparse.Namespace, body: str, photo_paths: list[str | Path] | None = None) -> int:
     if not getattr(args, "notify", False):
         return 0
     token = args.bot_token or _env("TELEGRAM_BOT_TOKEN")
@@ -95,9 +154,11 @@ def _maybe_notify(args: argparse.Namespace, body: str) -> int:
     if not token or not chat_id:
         print("Notify requested but TELEGRAM_BOT_TOKEN / TELEGRAM_MASTER_ID missing", file=sys.stderr)
         return 2
+    photos = list(photo_paths or [])
     try:
-        send_message(token, chat_id, body)
-        print(f"\nTelegram sent to {chat_id}")
+        send_message_with_photos(token, chat_id, body, photos)
+        suffix = f" with {len(photos)} screenshot(s)" if photos else ""
+        print(f"\nTelegram sent to {chat_id}{suffix}")
         return 0
     except TelegramError as exc:
         print(f"Telegram send failed: {exc}", file=sys.stderr)
@@ -127,7 +188,9 @@ def _cmd_run_once(args: argparse.Namespace) -> int:
     output_path = _save_output(args.save_output, digest)
     if output_path:
         print(f"\nSaved digest to {output_path}")
-    notify_code = _maybe_notify(args, digest)
+    digest_records = _digest_notification_records(filtered_records, args.top)
+    photo_paths = _notification_screenshot_paths(args, digest_records, default_top=args.top)
+    notify_code = _maybe_notify(args, digest, photo_paths)
     if notify_code:
         return notify_code
     return 0
@@ -138,12 +201,15 @@ def _cmd_due_soon(args: argparse.Namespace) -> int:
     with connect(args.db) as conn:
         records = fetch_all_records(conn, limit=args.limit)
     filtered_records = _apply_record_filters(records, public_only=args.public_only, min_score=args.min_score)
-    digest = render_due_soon_digest(filtered_records)
+    today = datetime.utcnow().date()
+    digest = render_due_soon_digest(filtered_records, today=today)
     print(digest)
     output_path = _save_output(args.save_output, digest)
     if output_path:
         print(f"\nSaved due-soon digest to {output_path}")
-    notify_code = _maybe_notify(args, digest)
+    notification_records = _due_soon_notification_records(filtered_records, today=today)
+    photo_paths = _notification_screenshot_paths(args, notification_records, default_top=min(args.limit, 10))
+    notify_code = _maybe_notify(args, digest, photo_paths)
     if notify_code:
         return notify_code
     return 0
@@ -188,6 +254,11 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--min-score", type=int, default=0)
     run_parser.add_argument("--bot-token")
     run_parser.add_argument("--chat-id")
+    run_parser.add_argument("--screenshot-top", type=int, help="Attach screenshots for the first N notified records; defaults to --top")
+    run_parser.add_argument("--screenshot-dir", help="Directory for Telegram notification screenshots")
+    run_parser.add_argument("--screenshot-wait-seconds", type=float, default=3.0)
+    run_parser.add_argument("--no-screenshots", dest="attach_screenshots", action="store_false", help="Disable screenshot attachments when notifying")
+    run_parser.set_defaults(attach_screenshots=True)
     run_parser.add_argument("--save-output", default=f"latest-digest-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}.txt")
     run_parser.set_defaults(func=_cmd_run_once)
 
@@ -199,6 +270,11 @@ def build_parser() -> argparse.ArgumentParser:
     due_parser.add_argument("--min-score", type=int, default=0)
     due_parser.add_argument("--bot-token")
     due_parser.add_argument("--chat-id")
+    due_parser.add_argument("--screenshot-top", type=int, default=10, help="Attach screenshots for the first N due-soon records")
+    due_parser.add_argument("--screenshot-dir", help="Directory for Telegram notification screenshots")
+    due_parser.add_argument("--screenshot-wait-seconds", type=float, default=3.0)
+    due_parser.add_argument("--no-screenshots", dest="attach_screenshots", action="store_false", help="Disable screenshot attachments when notifying")
+    due_parser.set_defaults(attach_screenshots=True)
     due_parser.add_argument("--save-output", default=f"due-soon-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}.txt")
     due_parser.set_defaults(func=_cmd_due_soon)
 
