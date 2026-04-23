@@ -37,7 +37,7 @@
 - [x] 새 CDP 탭 자동 닫기 및 `/json/version` health fallback 적용
 - [x] D-7/D-3/D-1 마감 알림 렌더링 추가
 - [x] cron block 렌더링 추가
-- [x] 매일 22:00 KST 1회 신규 공모전 업데이트 스크립트/cron 전환
+- [x] 매일 10:00 KST 1회 신규 공모전 업데이트 스크립트/cron 전환
 - [x] SQLite URL 캐시 기반 중복 링크 상세 재확인 skip 적용
 
 ## Latest Validation Snapshot
@@ -45,4 +45,4 @@
 - [x] `PYTHONPATH=src python3 -m unittest discover -s tests -v` -> 35 tests OK
 - [x] `PYTHONPATH=src python3 -m contest_radar.cli run-once --source-id thinkcontest-home --top 5 --public-only --min-score 40 --save-output browseros-e2e-thinkcontest-post-review.txt` -> BrowserOS/CDP 실제 수집 OK
 - [x] `CONTEST_RADAR_NOTIFY=0 CONTEST_RADAR_DB=/tmp/... ./scripts/daily_contest_update.sh` -> daily script smoke OK
-- [x] `crontab -l` -> managed block 1개, 22:00 KST daily-contest-update 설치 확인
+- [x] `crontab -l` -> managed block 1개, 10:00 KST daily-contest-update 설치 확인

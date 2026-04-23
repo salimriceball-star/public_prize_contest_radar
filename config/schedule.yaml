@@ -1,7 +1,7 @@
 timezone: Asia/Seoul
 entries:
   - id: daily-contest-update
-    purpose: Daily 22:00 KST new public contest update
-    kst_time: "22:00"
-    cron_utc: "0 13 * * *"
+    purpose: Daily 10:00 KST new public contest update
+    kst_time: "10:00"
+    cron_utc: "0 1 * * *"
     notify: true

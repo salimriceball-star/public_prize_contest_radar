@@ -8,18 +8,19 @@ from contest_radar.schedule import describe_schedule, filter_due_soon_records, r
 
 
 class ScheduleTest(unittest.TestCase):
-    def test_describe_schedule_includes_daily_2200_update(self):
+    def test_describe_schedule_includes_daily_1000_update(self):
         summary = describe_schedule()
-        self.assertIn("22:00 KST", summary)
-        self.assertIn("Daily 22:00 KST new public contest update", summary)
+        self.assertIn("10:00 KST", summary)
+        self.assertIn("Daily 10:00 KST new public contest update", summary)
         self.assertNotIn("08:05 KST", summary)
         self.assertNotIn("12:35 KST", summary)
         self.assertNotIn("18:35 KST", summary)
 
-    def test_render_crontab_maps_daily_2200_kst_to_1300_utc_script(self):
+    def test_render_crontab_maps_daily_1000_kst_to_0100_utc_script(self):
         crontab = render_crontab()
         self.assertIn("# public-prize-contest-radar BEGIN", crontab)
-        self.assertIn("0 13 * * *", crontab)
+        self.assertIn("0 1 * * *", crontab)
+        self.assertNotIn("0 13 * * *", crontab)
         self.assertIn("scripts/daily_contest_update.sh", crontab)
         self.assertIn("logs/cron/daily-contest-update.log", crontab)
         self.assertNotIn("morning-monitor", crontab)

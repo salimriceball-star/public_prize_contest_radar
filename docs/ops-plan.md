@@ -44,7 +44,7 @@ BrowserOS/CDP 운영 기준
 스케줄/cron 운영 기준
 - 기준 시간대는 Asia/Seoul이며 `config/schedule.yaml`은 UTC cron 식을 함께 보관한다.
 - 공식 반복 작업은 `python3 -m contest_radar.cli render-crontab` 출력 block을 사용자 crontab에 설치한다.
-- 현재 작업은 매일 22:00 KST(`0 13 * * *` UTC) 1회 `scripts/daily_contest_update.sh` 실행이다.
+- 현재 작업은 매일 10:00 KST(`0 1 * * *` UTC) 1회 `scripts/daily_contest_update.sh` 실행이다.
 - daily script는 기본적으로 `run-once --new-only --top 10 --public-only --min-score 40 --notify`를 호출해 신규로 DB에 들어온 공공형 후보만 Telegram digest로 보낸다.
 - 중복 방지는 SQLite `contests.url` 캐시 기준이다. 매 실행 시작 시 기존 URL을 로드하고, 이미 본 URL은 상세 BrowserOS/CDP fetch와 upsert/알림 대상에서 제외한다.
 - cron 로그는 `logs/cron/daily-contest-update.log`에 쌓으며 git 추적 대상이 아니다.
