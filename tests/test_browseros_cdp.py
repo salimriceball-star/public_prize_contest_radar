@@ -99,6 +99,25 @@ class BrowserOSCDPTest(unittest.TestCase):
         urlopen.assert_called_once()
         self.assertIn("/json/close/tab-new", urlopen.call_args.args[0])
 
+    def test_cdp_session_closes_reused_tabs_by_default_to_prevent_contest_tab_accumulation(self):
+        class FakeWebSocket:
+            def __init__(self):
+                self.closed = False
+
+            def close(self):
+                self.closed = True
+
+        session = CDPPageSession.__new__(CDPPageSession)
+        session.page = BrowserOSPage(page_id="tab-reused", websocket_url="ws://127.0.0.1:9100/devtools/page/tab-reused", reused=True)
+        session._ws = FakeWebSocket()
+        with patch("contest_radar.browseros_cdp._runtime_browseros_config", return_value={}), patch(
+            "contest_radar.browseros_cdp.urllib.request.urlopen"
+        ) as urlopen:
+            session.close()
+        self.assertTrue(session._ws.closed)
+        urlopen.assert_called_once()
+        self.assertIn("/json/close/tab-reused", urlopen.call_args.args[0])
+
     def test_capture_url_screenshot_saves_png_and_closes_tab(self):
         calls = []
 

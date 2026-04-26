@@ -109,11 +109,13 @@ class CDPPageSession:
         self._next_id = 0
 
     def close(self) -> None:
-        close_new_tabs = bool(_runtime_browseros_config().get("close_new_tabs_after_use", True))
+        browseros_config = _runtime_browseros_config()
+        close_tabs = bool(browseros_config.get("close_tabs_after_use", browseros_config.get("close_new_tabs_after_use", True)))
+        preserve_reused_tabs = bool(browseros_config.get("preserve_reused_tabs_after_use", False))
         try:
             self._ws.close()
         finally:
-            if self.page.reused or not close_new_tabs:
+            if not close_tabs or (self.page.reused and preserve_reused_tabs):
                 return
             try:
                 urllib.request.urlopen(f"{BROWSEROS_CDP_BASE}/json/close/{self.page.page_id}", timeout=30).read()
